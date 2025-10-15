@@ -33,4 +33,4 @@ all: ${FILES}
 
 clean:
 	rm -rf ${FILES}
-	rm ./stdlib.elf
+	rm -f ./stdlib.elf
