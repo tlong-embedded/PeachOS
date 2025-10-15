@@ -1,3 +1,26 @@
+;------------------------------------------------------------------------------
+; kernel.asm - Entry point and setup for PeachOS kernel (32-bit)
+;
+; This file contains the initial bootstrapping code for the PeachOS kernel.
+; It performs the following tasks:
+;   - Sets up segment registers (DS, ES, FS, GS, SS) to the data segment.
+;   - Initializes the stack pointer (ESP) and base pointer (EBP) to a known
+;     memory location (0x00200000).
+;   - Remaps the master Programmable Interrupt Controller (PIC) to avoid
+;     conflicts with CPU exceptions by configuring its interrupt vector offset.
+;   - Calls the main kernel entry point (kernel_main).
+;   - Provides a utility routine (kernel_registers) to reset segment registers.
+;   - Pads the file to 512 bytes for boot sector alignment.
+;
+; Symbols:
+;   _start             - Kernel entry point, called by the bootloader.
+;   kernel_registers   - Routine to reset segment registers to the data segment.
+;   kernel_main        - External symbol, main kernel function implemented in C.
+;
+; Constants:
+;   CODE_SEG           - Code segment selector (0x08).
+;   DATA_SEG           - Data segment selector (0x10).
+;------------------------------------------------------------------------------
 [BITS 32]
 
 global _start

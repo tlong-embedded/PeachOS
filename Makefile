@@ -1,7 +1,7 @@
 FILES = ./build/kernel.asm.o ./build/kernel.o ./build/loader/formats/elf.o ./build/loader/formats/elfloader.o ./build/isr80h/isr80h.o ./build/isr80h/process.o ./build/isr80h/heap.o ./build/keyboard/keyboard.o ./build/keyboard/classic.o ./build/isr80h/io.o ./build/isr80h/misc.o ./build/disk/disk.o ./build/disk/streamer.o ./build/task/process.o ./build/task/task.o ./build/task/task.asm.o ./build/task/tss.asm.o ./build/fs/pparser.o ./build/fs/file.o ./build/fs/fat/fat16.o ./build/string/string.o ./build/idt/idt.asm.o ./build/idt/idt.o ./build/memory/memory.o ./build/io/io.asm.o ./build/gdt/gdt.o ./build/gdt/gdt.asm.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/printf/printf.o
 INCLUDES = -I./src
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
-# MOUNT_PATH = /Users/tlong/mnt/d
+
 
 all: ./bin/boot.bin ./bin/kernel.bin user_programs
 	rm -rf ./bin/fs.img
@@ -20,12 +20,6 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 	dd if=./bin/boot.bin >> ./bin/os.img
 	dd if=./bin/kernel.bin >> ./bin/os.img
 	dd if=./bin/fs.img of=./bin/os.img bs=512 conv=notrunc skip=200 seek=200
-# 	dd if=./bin/fs.img >> ./bin/os.bin
-# 	sudo mount -t vfat ./bin/os.bin $(MOUNT_PATH)
-# 	sudo cp ./hello.txt $(MOUNT_PATH)
-# 	sudo cp ./programs/blank/blank.elf $(MOUNT_PATH)
-# 	sudo cp ./programs/shell/shell.elf $(MOUNT_PATH)
-# 	sudo umount $(MOUNT_PATH)
 
 ./bin/kernel.bin: $(FILES)
 	i686-elf-ld -g -relocatable $(FILES) -o ./build/kernelfull.o
