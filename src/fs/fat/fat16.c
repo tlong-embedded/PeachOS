@@ -6,6 +6,7 @@
 #include "memory/memory.h"
 #include "status.h"
 #include "kernel.h"
+#include "printf/printf.h"
 #include <stdint.h>
 
 #define PEACHOS_FAT16_SIGNATURE 0x29
@@ -144,12 +145,9 @@ struct filesystem *fat16_init()
 static void fat16_init_private(struct disk *disk, struct fat_private *private)
 {
     memset(private, 0, sizeof(struct fat_private));
-private
-    ->cluster_read_stream = diskstreamer_new(disk->id);
-private
-    ->fat_read_stream = diskstreamer_new(disk->id);
-private
-    ->directory_stream = diskstreamer_new(disk->id);
+    private->cluster_read_stream = diskstreamer_new(disk->id);
+    private->fat_read_stream = diskstreamer_new(disk->id);
+    private->directory_stream = diskstreamer_new(disk->id);
 }
 
 int fat16_sector_to_absolute(struct disk *disk, int sector)
@@ -209,6 +207,7 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
     int res = 0;
     struct fat_directory_item *dir = 0x00;
     struct fat_header *primary_header = &fat_private->header.primary_header;
+    printf(" fat_copies %d, sectors_per_fat %d, res %d\n", primary_header->fat_copies, primary_header->sectors_per_fat, primary_header->reserved_sectors);
     int root_dir_sector_pos = (primary_header->fat_copies * primary_header->sectors_per_fat) + primary_header->reserved_sectors;
     int root_dir_entries = fat_private->header.primary_header.root_dir_entries;
     int root_dir_size = (root_dir_entries * sizeof(struct fat_directory_item));
@@ -220,10 +219,12 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
 
     int total_items = fat16_get_total_items_for_directory(disk, root_dir_sector_pos);
 
+    printf(" Total items: %d\n", total_items);
     dir = kzalloc(root_dir_size);
     if (!dir)
     {
         res = -ENOMEM;
+        print("Bad mem alloc\n");
         goto err_out;
     }
 
@@ -231,12 +232,14 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
     if (diskstreamer_seek(stream, fat16_sector_to_absolute(disk, root_dir_sector_pos)) != PEACHOS_ALL_OK)
     {
         res = -EIO;
+        print("seek failed\n");
         goto err_out;
     }
 
     if (diskstreamer_read(stream, dir, root_dir_size) != PEACHOS_ALL_OK)
     {
         res = -EIO;
+        print("root directory read failed\n");
         goto err_out;
     }
 
@@ -268,24 +271,30 @@ int fat16_resolve(struct disk *disk)
     if (!stream)
     {
         res = -ENOMEM;
+        print("FAT16: Failed to create disk stream\n");
         goto out;
     }
 
     if (diskstreamer_read(stream, &fat_private->header, sizeof(fat_private->header)) != PEACHOS_ALL_OK)
     {
         res = -EIO;
+        print("FAT16: Failed to read header\n");
         goto out;
     }
+
+    printf(" Header: %d\n", fat_private->header.primary_header.bytes_per_sector);
 
     if (fat_private->header.shared.extended_header.signature != 0x29)
     {
         res = -EFSNOTUS;
+        print("FAT16: Invalid signature\n");
         goto out;
     }
 
     if (fat16_get_root_directory(disk, fat_private, &fat_private->root_directory) != PEACHOS_ALL_OK)
     {
         res = -EIO;
+        print("FAT16: Failed to read root directory\n");
         goto out;
     }
 
@@ -293,12 +302,14 @@ out:
     if (stream)
     {
         diskstreamer_close(stream);
+        print("FAT16: Closed stream\n");
     }
 
     if (res < 0)
     {
         kfree(fat_private);
         disk->fs_private = 0;
+        print("FAT16: Failed to resolve filesystem\n");
     }
     return res;
 }
@@ -332,6 +343,7 @@ void fat16_get_full_relative_filename(struct fat_directory_item *item, char *out
         *out_tmp++ = '.';
         fat16_to_proper_string(&out_tmp, (const char *)item->ext, sizeof(item->ext));
     }
+    printf("out_tmp: %s\n", out);
 }
 
 struct fat_directory_item *fat16_clone_directory_item(struct fat_directory_item *item, int size)
@@ -526,6 +538,7 @@ struct fat_directory *fat16_load_fat_directory(struct disk *disk, struct fat_dir
     if (!(item->attribute & FAT_FILE_SUBDIRECTORY))
     {
         res = -EINVARG;
+        print("FAT16: Not a directory\n");
         goto out;
     }
 
@@ -533,6 +546,7 @@ struct fat_directory *fat16_load_fat_directory(struct disk *disk, struct fat_dir
     if (!directory)
     {
         res = -ENOMEM;
+        print("FAT16: Failed to allocate directory\n");
         goto out;
     }
 
@@ -545,12 +559,14 @@ struct fat_directory *fat16_load_fat_directory(struct disk *disk, struct fat_dir
     if (!directory->item)
     {
         res = -ENOMEM;
+        print("FAT16: Failed to allocate directory items\n");
         goto out;
     }
 
     res = fat16_read_internal(disk, cluster, 0x00, directory_size, directory->item);
     if (res != PEACHOS_ALL_OK)
     {
+        print("FAT16: Failed to read directory items\n");
         goto out;
     }
 
@@ -604,6 +620,7 @@ struct fat_item *fat16_get_directory_entry(struct disk *disk, struct path_part *
     struct fat_item *root_item = fat16_find_item_in_directory(disk, &fat_private->root_directory, path->part);
     if (!root_item)
     {
+        print("FAT16: Failed to find root item\n");
         goto out;
     }
 
@@ -633,6 +650,7 @@ void *fat16_open(struct disk *disk, struct path_part *path, FILE_MODE mode)
     if (mode != FILE_MODE_READ)
     {
         err_code = -ERDONLY;
+        print("FAT16: Only read mode is supported\n");
         goto err_out;
     }
 
@@ -640,6 +658,7 @@ void *fat16_open(struct disk *disk, struct path_part *path, FILE_MODE mode)
     if (!descriptor)
     {
         err_code = -ENOMEM;
+        print("FAT16: Failed to allocate file descriptor\n");
         goto err_out;
     }
 
@@ -647,6 +666,7 @@ void *fat16_open(struct disk *disk, struct path_part *path, FILE_MODE mode)
     if (!descriptor->item)
     {
         err_code = -EIO;
+        print("FAT16: Failed to find file in directory\n");
         goto err_out;
     }
 
@@ -664,12 +684,14 @@ static void fat16_free_file_descriptor(struct fat_file_descriptor* desc)
 {
     fat16_fat_item_free(desc->item);
     kfree(desc);
+    print("FAT16: Freed file descriptor\n");
 }
 
 
 int fat16_close(void* private)
 {
     fat16_free_file_descriptor((struct fat_file_descriptor*) private);
+    print("FAT16: Closed file\n");
     return 0;
 }
 
@@ -681,6 +703,7 @@ int fat16_stat(struct disk* disk, void* private, struct file_stat* stat)
     if (desc_item->type != FAT_ITEM_TYPE_FILE)
     {
         res = -EINVARG;
+        print("FAT16: Invalid argument\n");
         goto out;
     }
 
@@ -707,6 +730,7 @@ int fat16_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
         res = fat16_read_internal(disk, fat16_get_first_cluster(item), offset, size, out_ptr);
         if (ISERR(res))
         {
+            print("FAT16: Read error\n");
             goto out;
         }
 
@@ -727,6 +751,7 @@ int fat16_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode)
     if (desc_item->type != FAT_ITEM_TYPE_FILE)
     {
         res = -EINVARG;
+        print("FAT16: Invalid argument\n");
         goto out;
     }
 
@@ -734,6 +759,7 @@ int fat16_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode)
     if (offset >= ritem->filesize)
     {
         res = -EIO;
+        print("FAT16: Offset exceeds file size\n");
         goto out;
     }
 

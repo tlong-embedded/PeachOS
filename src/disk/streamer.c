@@ -1,6 +1,9 @@
 #include "streamer.h"
 #include "memory/heap/kheap.h"
 #include "config.h"
+#include "disk/disk.h"
+#include "status.h" 
+#include "kernel.h"
 
 #include <stdbool.h>
 struct disk_stream* diskstreamer_new(int disk_id)
@@ -39,6 +42,7 @@ int diskstreamer_read(struct disk_stream* stream, void* out, int total)
     int res = disk_read_block(stream->disk, sector, 1, buf);
     if (res < 0)
     {
+        print("FAT16: Failed to read block\n");
         goto out;
     }
 

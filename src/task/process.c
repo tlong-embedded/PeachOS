@@ -393,6 +393,7 @@ static int process_load_data(const char* filename, struct process* process)
     res = process_load_elf(filename, process);
     if (res == -EINFORMAT)
     {
+        print("Not an ELF, trying binary format\n");
         res = process_load_binary(filename, process);
     }
 
@@ -477,6 +478,7 @@ int process_load(const char* filename, struct process** process)
     if (process_slot < 0)
     {
         res = -EISTKN;
+        print("No free process slots\n");
         goto out;
     }
 
@@ -504,6 +506,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     if (process_get(process_slot) != 0)
     {
         res = -EISTKN;
+        print("Process slot is already taken\n");
         goto out;
     }
 
@@ -511,6 +514,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     if (!_process)
     {
         res = -ENOMEM;
+        print("Failed to allocate process structure\n");
         goto out;
     }
 
@@ -518,6 +522,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     res = process_load_data(filename, _process);
     if (res < 0)
     {
+        print("Failed to load process data\n");
         goto out;
     }
 
@@ -525,6 +530,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     if (!_process->stack)
     {
         res = -ENOMEM;
+        print("Failed to allocate process stack\n");
         goto out;
     }
 
@@ -537,6 +543,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     {
         res = ERROR_I(_process->task);
 
+        print("Failed to create task for process\n");
         // Task is NULL due to error code being returned in task_new.
         _process->task = NULL;
         goto out;
@@ -546,6 +553,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
     res = process_map_memory(_process);
     if (res < 0)
     {
+        print("Failed to map process memory\n");
         goto out;
     }
 

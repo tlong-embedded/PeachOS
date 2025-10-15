@@ -195,6 +195,7 @@ int elf_load(const char* filename, struct elf_file** file_out)
     if (res <= 0)
     {
         res = -EIO;
+        print("elf_load: Failed to open file\n");
         goto out;
     }
 
@@ -203,6 +204,7 @@ int elf_load(const char* filename, struct elf_file** file_out)
     res = fstat(fd, &stat);
     if (res < 0)
     {
+        print("elf_load: Failed to stat file\n");
         goto out;
     }
 
@@ -210,12 +212,14 @@ int elf_load(const char* filename, struct elf_file** file_out)
     res = fread(elf_file->elf_memory, stat.filesize, 1, fd);
     if (res < 0)
     {
+        print("elf_load: Failed to read file\n");
         goto out;
     }
 
     res = elf_process_loaded(elf_file);
     if(res < 0)
     {
+        print("elf_load: Failed to process ELF file\n");
         goto out;
     }
 

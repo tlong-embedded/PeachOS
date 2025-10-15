@@ -100,6 +100,9 @@ struct filesystem* fs_resolve(struct disk* disk)
         if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
         {
             fs = filesystems[i];
+            print("Resolved filesystem: ");
+            print(fs->name);
+            print("\n");
             break;
         }
     }

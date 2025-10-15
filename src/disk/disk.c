@@ -3,6 +3,7 @@
 #include "config.h"
 #include "status.h"
 #include "memory/memory.h"
+#include "kernel.h"
 
 struct disk disk;
 
@@ -57,6 +58,7 @@ int disk_read_block(struct disk* idisk, unsigned int lba, int total, void* buf)
 {
     if (idisk != &disk)
     {
+        print("FAT16: Failed to resolve filesystem\n");
         return -EIO;
     }
 

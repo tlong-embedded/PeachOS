@@ -9,18 +9,18 @@ nop
 
 ; FAT16 Header
 OEMIdentifier           db 'PEACHOS '
-BytesPerSector          dw 0x200
-SectorsPerCluster       db 0x80
+BytesPerSector          dw 0x0200
+SectorsPerCluster       db 0x01
 ReservedSectors         dw 200
 FATCopies               db 0x02
-RootDirEntries          dw 0x40
-NumSectors              dw 0x00
+RootDirEntries          dw 0x0200
+NumSectors              dw 0x7800
 MediaType               db 0xF8
-SectorsPerFat           dw 0x100
-SectorsPerTrack         dw 0x20
-NumberOfHeads           dw 0x40
-HiddenSectors           dd 0x00
-SectorsBig              dd 0x773594
+SectorsPerFat           dw 0x0077
+SectorsPerTrack         dw 0x0020
+NumberOfHeads           dw 0x0002
+HiddenSectors           dd 0x00000000
+SectorsBig              dd 0x00000000
 
 ; Extended BPB (Dos 4.0)
 DriveNumber             db 0x80
@@ -100,7 +100,7 @@ gdt_descriptor:
 
     ; For the loading...
     mov eax, 1
-    mov ecx, 100
+    mov ecx, 200
     mov edi, 0x0100000
 
 
