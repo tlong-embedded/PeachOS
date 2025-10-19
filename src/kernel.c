@@ -31,6 +31,8 @@
 #include "gdt/gdt.h"
 #include "config.h"
 #include "status.h"
+#include "printf/printf.h"
+#include "log/log.h"
 
 /*
  * Global variables and definitions for PeachOS kernel:
@@ -44,12 +46,10 @@
  * - gdt_real: Array holding the actual Global Descriptor Table (GDT) segments.
  */
 uint16_t* video_mem = 0;
-
 uint16_t terminal_row = 0;
-
 uint16_t terminal_col = 0;
-
 #define TERMINAL_COLOUR 0x0F  
+uint8_t terminal_color = TERMINAL_COLOUR;
 
 static struct paging_4gb_chunk* kernel_chunk = 0;
 
@@ -78,6 +78,18 @@ struct gdt_structured gdt_structured[PEACHOS_TOTAL_GDT_SEGMENTS] = {
 uint16_t terminal_make_char(char c, char colour)
 {
     return (colour << 8) | c;
+}
+
+/** 
+ * @brief terminal_setcolor - Sets the current terminal text colour
+ * @param[in] colour The colour attribute to set for the terminal text
+ * @return void
+ * @details This function updates the global terminal_color variable,
+ * which determines the colour of text output in the terminal.
+ */
+void terminal_setcolor(uint8_t colour)
+{
+    terminal_color = colour;
 }
 
 /** 
@@ -174,7 +186,7 @@ void terminal_initialize()
     {
         for (int x = 0; x < VGA_WIDTH; x++)
         {
-            terminal_putchar(x, y, ' ', TERMINAL_COLOUR);
+            terminal_putchar(x, y, ' ', terminal_color);
         }
     }   
 }
@@ -193,7 +205,7 @@ void terminal_initialize()
  */
 void _putchar(char character)
 {
-    terminal_writechar(character, TERMINAL_COLOUR);
+    terminal_writechar(character, terminal_color);
 }
 
 /** 
@@ -212,7 +224,7 @@ void print(const char* str)
     size_t len = strlen(str);
     for (size_t i = 0; i < len; i++)
     {
-        terminal_writechar(str[i], TERMINAL_COLOUR);
+        terminal_writechar(str[i], terminal_color);
     }
 }
 
@@ -255,48 +267,66 @@ void kernel_page()
  */
 void kernel_main()
 {
-    terminal_initialize();
     memset(gdt_real, 0x00, sizeof(gdt_real));
     gdt_structured_to_gdt(gdt_real, gdt_structured, PEACHOS_TOTAL_GDT_SEGMENTS);
 
     // Load the gdt
     gdt_load(gdt_real, sizeof(gdt_real)-1);
 
+    terminal_initialize();
+    log_set_level(LOG_INFO);
+
+    log_info("Welcome to Skytos!");
+    log_info("Initializing kernel...");
+    log_info("Setting up GDT...");
+
     // Initialize the heap
     kheap_init();
-    print("Welcome to PeachOS!\n");
+    log_info("Kernel heap initialized");
 
     // Initialize filesystems
     fs_init();
+    log_info("Filesystems initialized");
 
     // Search and initialize the disks
     disk_search_and_init();
+    log_info("Disks initialized");
 
     // Initialize the interrupt descriptor table
     idt_init();
+    log_info("IDT initialized");
 
     // Setup the TSS
     memset(&tss, 0x00, sizeof(tss));
     tss.esp0 = 0x600000;
     tss.ss0 = KERNEL_DATA_SELECTOR;
+    log_info("TSS initialized");
 
     // Load the TSS
     tss_load(0x28);
+    log_info("TSS loaded");
 
     // Setup paging
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
-    
+    log_info("Paging initialized");
+
     // Switch to kernel paging chunk
     paging_switch(kernel_chunk);
+    log_info("Switched to kernel paging chunk");
 
     // Enable paging
     enable_paging();
+    log_info("Paging enabled");
 
     // Register the kernel commands
     isr80h_register_commands();
+    log_info("Kernel commands registered");
 
     // Initialize all the system keyboards
     keyboard_init();
+    log_info("Keyboards initialized");
+
+    while(1) {}
 
     struct process* process = NULL;
 
@@ -305,6 +335,7 @@ void kernel_main()
     {
         panic("Failed to load blank.elf\n");
     }
+    log_info("Loaded blank.elf process");
 
 
     struct command_argument argument;
@@ -320,12 +351,15 @@ void kernel_main()
     {
         panic("Failed to load blank.elf\n");
     }
+    log_info("Loaded blank.elf process");
 
     strcpy(argument.argument, "Abc!");
     argument.next = NULL;
     process_inject_arguments(process, &argument);
 
-    task_run_first_ever_task();
+    log_info("Starting first ever task...");
+    //task_run_first_ever_task();
 
+    log_info("First ever task started");
     while(1) {}
 }

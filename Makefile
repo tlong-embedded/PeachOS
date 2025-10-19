@@ -30,7 +30,8 @@ FILES = \
 	./build/memory/heap/kheap.o \
 	./build/memory/paging/paging.o \
 	./build/memory/paging/paging.asm.o \
-	./build/printf/printf.o
+	./build/printf/printf.o \
+	./build/log/log.o
 INCLUDES = -I./src -Iinc
 
 # Debug and optimization flags
@@ -170,6 +171,9 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 
 ./build/printf/printf.o: ./src/printf/printf.c
 	i686-elf-gcc $(INCLUDES) -I./src/printf $(FLAGS) -std=gnu99 -c ./src/printf/printf.c -o ./build/printf/printf.o
+
+./build/log/log.o: ./src/log/log.c
+	i686-elf-gcc $(INCLUDES) -I./src/log $(FLAGS) -std=gnu99 -c ./src/log/log.c -o ./build/log/log.o
 
 user_programs:
 	cd ./programs/stdlib && $(MAKE) all

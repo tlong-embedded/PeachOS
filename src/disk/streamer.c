@@ -42,11 +42,11 @@ int diskstreamer_read(struct disk_stream* stream, void* out, int total)
     int res = disk_read_block(stream->disk, sector, 1, buf);
     if (res < 0)
     {
-        print("FAT16: Failed to read block\n");
+        log_error("FAT16: Failed to read block\n");
         goto out;
     }
 
-   
+    log_debug("FAT16: Successfully read block\n");
     for (int i = 0; i < total_to_read; i++)
     {
         *(char*)out++ = buf[offset+i];

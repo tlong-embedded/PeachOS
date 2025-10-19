@@ -30,7 +30,7 @@ void fs_insert_filesystem(struct filesystem* filesystem)
     fs = fs_get_free_filesystem();
     if (!fs)
     {
-        print("Problem inserting filesystem"); 
+        log_error("Problem inserting filesystem"); 
         while(1) {}
     }
 
@@ -100,9 +100,7 @@ struct filesystem* fs_resolve(struct disk* disk)
         if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
         {
             fs = filesystems[i];
-            print("Resolved filesystem: ");
-            print(fs->name);
-            print("\n");
+            log_debug("Resolved filesystem: %s\n", fs->name);
             break;
         }
     }

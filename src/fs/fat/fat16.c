@@ -207,7 +207,7 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
     int res = 0;
     struct fat_directory_item *dir = 0x00;
     struct fat_header *primary_header = &fat_private->header.primary_header;
-    printf(" fat_copies %d, sectors_per_fat %d, res %d\n", primary_header->fat_copies, primary_header->sectors_per_fat, primary_header->reserved_sectors);
+    log_debug(" fat_copies %d, sectors_per_fat %d, res %d\n", primary_header->fat_copies, primary_header->sectors_per_fat, primary_header->reserved_sectors);
     int root_dir_sector_pos = (primary_header->fat_copies * primary_header->sectors_per_fat) + primary_header->reserved_sectors;
     int root_dir_entries = fat_private->header.primary_header.root_dir_entries;
     int root_dir_size = (root_dir_entries * sizeof(struct fat_directory_item));
@@ -219,7 +219,7 @@ int fat16_get_root_directory(struct disk *disk, struct fat_private *fat_private,
 
     int total_items = fat16_get_total_items_for_directory(disk, root_dir_sector_pos);
 
-    printf(" Total items: %d\n", total_items);
+    log_debug(" Total items: %d\n", total_items);
     dir = kzalloc(root_dir_size);
     if (!dir)
     {
@@ -282,7 +282,7 @@ int fat16_resolve(struct disk *disk)
         goto out;
     }
 
-    printf(" Header: %d\n", fat_private->header.primary_header.bytes_per_sector);
+    log_debug(" Header: %d\n", fat_private->header.primary_header.bytes_per_sector);
 
     if (fat_private->header.shared.extended_header.signature != 0x29)
     {
@@ -302,7 +302,7 @@ out:
     if (stream)
     {
         diskstreamer_close(stream);
-        print("FAT16: Closed stream\n");
+        log_debug("FAT16: Closed stream\n");
     }
 
     if (res < 0)

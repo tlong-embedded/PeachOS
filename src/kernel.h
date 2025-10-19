@@ -26,6 +26,8 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include "log/log.h"
+
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 20
 
